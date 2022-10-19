@@ -15,6 +15,17 @@ fmtlog is a performant asynchronous logging library using [fmt](https://github.c
 * Linux (GCC 10.2 tested)
 * Windows (MSVC 2019 tested)
 
+## 本分支改动
+
+为了封装给 [火山软件开发平台](http://voldp.com/voldev.html) 使用，修改了内部的编码
+
+- 内部编码从 char 改为 wchar_t
+- LogCBFn 回调增加一个 userData 指针参数（使用 setLogQFullCB 设置）
+- 增加 logOnceText，用于记录纯文本的日志（不做格式化）
+- 增加 FMTLOG_LIMIT_LOC 和 FMTLOG_ONCE_LOC，调用时在参数中提供语句位置
+- 增加 LOG_LIMIT_LOC 和 LOG_ONCE_LOC，记录纯文本日志且在参数中提供语句位置
+- 增加一个 HeaderPattern——L，提供中文的日志级别描述
+
 ## Install
 C++17 is required, and fmtlog is dependent on [fmtlib](https://github.com/fmtlib/fmt), you need to install fmtlib first if you haven't.
 #### Header only version
