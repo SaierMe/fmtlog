@@ -104,11 +104,36 @@ public:
   static void preallocate() noexcept;
 
   // Set the file for logging
-  static void setLogFile(const wchar_t* filename, bool truncate = false);
+  static bool setLogFile(const wchar_t* filename, bool truncate = false);
 
   // Set an existing FILE* for logging, if manageFp is false fmtlog will not buffer log internally
   // and will not close the FILE*
   static void setLogFile(FILE* fp, bool manageFp = false);
+
+  static bool setDailyLogFile(const wchar_t* filename, bool truncate = false, int32_t hour = 0, int32_t second = 0, const wchar_t* DateFormat = L"_%F") noexcept;
+
+  static void closeDailyLogFile() noexcept;
+
+  static void __stdcall switchLogFileCallBack (PVOID lpParameter, BOOL TimerOrWaitFired) {
+    auto& d = fmtlogDetailWrapper<>::impl;
+    time_t CurrentTime = std::time (nullptr);
+    if (CurrentTime > d.targetTimeStamp) {
+      auto pos1 = d.logFileNmae.find_last_of(L'.');
+      auto pos2 = d.logFileNmae.find_last_of(L'\\');
+      std::wstring logFile = d.logFileNmae;
+      struct tm timeinfo;
+      ::localtime_s(&timeinfo, &CurrentTime);
+      WCHAR szTime[256] { 0 };
+      ::wcsftime(szTime, sizeof(szTime), d.dataFormat.c_str(), &timeinfo);
+      if (pos1 > pos2)
+        logFile.insert(pos1, szTime);
+      else
+        logFile.append(szTime);
+      timeinfo.tm_sec = 0; timeinfo.tm_min = 0; timeinfo.tm_hour = 0;
+      d.targetTimeStamp = mktime(&timeinfo) + d.timeDiff;
+      setLogFile(logFile.c_str(), false);
+    }
+  }
 
   // Collect log msgs from all threads and write to log file
   // If forceFlush = true, internal file buffer is flushed
@@ -809,7 +834,7 @@ inline bool fmtlogT<_>::checkLogLevel(LogLevel logLevel) noexcept {
     int64_t ns = fmtlogWrapper<>::impl.tscns.tsc2ns(tsc);                                          \
     if (ns < limitNs) break;                                                                       \
     limitNs = ns + min_interval;                                                                   \
-    fmtlogWrapper<>::impl.logVol(source_location, level, format, ##__VA_ARGS__);                   \
+    fmtlogWrapper<>::impl.logOnce(source_location, level, format, ##__VA_ARGS__);                  \
   } while (0)
 
 #define FMTLOG_ONCE_LOC(source_location, level, format, ...)                                       \
@@ -829,7 +854,7 @@ inline bool fmtlogT<_>::checkLogLevel(LogLevel logLevel) noexcept {
     fmtlogWrapper<>::impl.logOnceText(source_location, level, log_content);                        \
   } while (0)
 
-#define LOG_ONCE_LOC(source_location, level, log_content)                                     \
+#define LOG_ONCE_LOC(source_location, level, log_content)                                          \
   do {                                                                                             \
     if (!fmtlog::checkLogLevel(level)) break;                                                      \
     fmtlogWrapper<>::impl.logOnceText(source_location, level, log_content);                        \

@@ -28,11 +28,13 @@ SOFTWARE.
 #include <ios>
 
 #ifdef _WIN32
+/*
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
 #include <processthreadsapi.h>
+*/
 #else
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -241,6 +243,12 @@ public:
   std::mutex logInfoMutex;
   std::vector<StaticLogInfo> logInfos;
   std::vector<StaticLogInfo> bgLogInfos;
+
+  std::wstring logFileNmae;
+  std::wstring dataFormat;
+  HANDLE hTimer = nullptr;
+  time_t targetTimeStamp = 0;
+  int32_t timeDiff = 0;
 
   fmtlog::LogCBFn logCB = nullptr;
   fmtlog::LogLevel minCBLogLevel;
@@ -547,24 +555,28 @@ void fmtlogT<_>::preallocate() noexcept {
 }
 
 template<int _>
-void fmtlogT<_>::setLogFile(const wchar_t* filename, bool truncate) {
+bool fmtlogT<_>::setLogFile(const wchar_t* filename, bool truncate) {
   auto& d = fmtlogDetailWrapper<>::impl;
   FILE* newFp = _wfopen(filename, truncate ? L"wb" : L"ab");
   if (!newFp) {
+    /*
     std::string err = fmt::format("Unable to open file: {}", strerror(errno));
     fmt::detail::throw_format_error(err.c_str());
+    */
+    return false;
   }
   setbuf(newFp, nullptr);
   fseek(newFp, 0, SEEK_END);
   d.fpos = ftell(newFp);
   if (d.fpos == 0) {
-    const char cUtf16leBom[2] { 0xFF, 0xFE };
+    const unsigned char cUtf16leBom[2]{0xFF, 0xFE};
     fwrite(&cUtf16leBom, 1, 2, newFp);
   }
 
   closeLogFile();
   d.outputFp = newFp;
   d.manageFp = true;
+  return true;
 }
 
 template<int _>
@@ -579,6 +591,45 @@ void fmtlogT<_>::setLogFile(FILE* fp, bool manageFp) {
     d.fpos = 0;
   d.outputFp = fp;
   d.manageFp = manageFp;
+}
+
+template<int _>
+bool fmtlogT<_>::setDailyLogFile(const wchar_t* filename, bool truncate, int32_t hour, int32_t second, const wchar_t* DateFormat) noexcept {
+  auto& d = fmtlogDetailWrapper<>::impl;
+  d.logFileNmae = filename;
+  auto pos1 = d.logFileNmae.find_last_of(L'.');
+  auto pos2 = d.logFileNmae.find_last_of(L'\\');
+  if (pos1 == std::wstring::npos || pos2 == std::wstring::npos) {
+    return false;
+  }
+  std::wstring logFile = d.logFileNmae;
+  d.timeDiff = (((24 + hour) * 60) + second) * 60;
+  if (!::CreateTimerQueueTimer(&d.hTimer, 0, reinterpret_cast<WAITORTIMERCALLBACK>(&switchLogFileCallBack), reinterpret_cast<PVOID>(d.timeDiff), 0, 60 * 1000, WT_EXECUTEINTIMERTHREAD)) {
+    return false;
+  }
+  d.targetTimeStamp = std::time(nullptr);
+  struct tm timeinfo;
+  ::localtime_s(&timeinfo, &d.targetTimeStamp);
+  WCHAR szTime[256] { 0 };
+  ::wcsftime(szTime, sizeof(szTime), DateFormat, &timeinfo);
+  if (pos1 > pos2)
+    logFile.insert(pos1, szTime);
+  else
+    logFile.append(szTime);
+  d.dataFormat = DateFormat;
+  timeinfo.tm_sec = 0; timeinfo.tm_min = 0; timeinfo.tm_hour = 0;
+  d.targetTimeStamp = mktime(&timeinfo) + d.timeDiff;
+  return setLogFile(logFile.c_str(), truncate);
+}
+
+template<int _>
+void fmtlogT<_>::closeDailyLogFile() noexcept {
+  auto& d = fmtlogDetailWrapper<>::impl;
+  if (d.hTimer) {
+    ::DeleteTimerQueueTimer(0, d.hTimer, NULL);
+    d.hTimer = nullptr;
+  }
+  fmtlogDetailWrapper<>::impl.closeLogFile();
 }
 
 template<int _>
