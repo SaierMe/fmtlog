@@ -24,7 +24,17 @@ SOFTWARE.
 #pragma once
 //#define FMTLOG_HEADER_ONLY
 #include "fmt/format.h"
+#if (defined (_WIN32) && !defined (FMTLOG_UNICODE_STRING))
+#define FMTLOG_UNICODE_STRING
+#endif
+#ifdef FMTLOG_UNICODE_STRING
 #include "fmt/xchar.h"
+#define FMTLOG_CHAR wchar_t
+#define FMTLOG_DWORD uint32_t
+#else
+#define FMTLOG_CHAR char
+#define FMTLOG_DWORD uint16_t
+#endif
 #include <type_traits>
 #include <vector>
 #include <chrono>
@@ -40,6 +50,33 @@ SOFTWARE.
 #define FAST_THREAD_LOCAL thread_local
 #else
 #define FAST_THREAD_LOCAL __thread
+#ifdef FMTLOG_UNICODE_STRING
+  #ifndef _T
+  #define _T(t) L ## t
+  #endif
+  #ifndef _tcslen
+  #define _tcslen wcslen
+  #endif
+  #ifndef _tcsftime
+  #define _tcsftime wcsftime
+  #endif
+  #ifndef _tfopen
+  #define _tfopen wfopen
+  #endif
+#else
+  #ifndef _T
+  #define _T(t) t
+  #endif
+  #ifndef _tcslen
+  #define _tcslen wcslen
+  #endif
+  #ifndef _tcsftime
+  #define _tcsftime strftime
+  #endif
+  #ifndef _tfopen
+  #define _tfopen fopen
+  #endif
+#endif
 #endif
 
 // define FMTLOG_BLOCK=1 if log statment should be blocked when queue is full, instead of discarding the msg
@@ -64,8 +101,8 @@ struct UnrefPtr : std::false_type
 { using type = Arg; };
 
 template<>
-struct UnrefPtr<wchar_t*> : std::false_type
-{ using type = wchar_t*; };
+struct UnrefPtr<FMTLOG_CHAR*> : std::false_type
+{ using type = FMTLOG_CHAR*; };
 
 template<>
 struct UnrefPtr<void*> : std::false_type
@@ -102,13 +139,13 @@ public:
   static void preallocate() noexcept;
 
   // Set the file for logging
-  static bool setLogFile(const wchar_t* filename, bool truncate = false);
+  static bool setLogFile(const FMTLOG_CHAR* filename, bool truncate = false);
 
   // Set an existing FILE* for logging, if manageFp is false fmtlog will not buffer log internally
   // and will not close the FILE*
   static void setLogFile(FILE* fp, bool manageFp = false);
 
-  static bool setDailyLogFile(const wchar_t* filename, bool truncate = false, int32_t hour = 0, int32_t second = 0, const wchar_t* DateFormat = L"_%F") noexcept;
+  static bool setDailyLogFile(const FMTLOG_CHAR* filename, bool truncate = false, int32_t hour = 0, int32_t second = 0, const FMTLOG_CHAR* DateFormat = _T("_%F")) noexcept;
 
   static void closeDailyLogFile() noexcept;
 
@@ -116,13 +153,13 @@ public:
     auto& d = fmtlogDetailWrapper<>::impl;
     time_t CurrentTime = std::time (nullptr);
     if (CurrentTime > d.targetTimeStamp) {
-      auto pos1 = d.logFileNmae.find_last_of(L'.');
-      auto pos2 = d.logFileNmae.find_last_of(L'\\');
-      std::wstring logFile = d.logFileNmae;
+      auto pos1 = d.logFileNmae.find_last_of(_T('.'));
+      auto pos2 = d.logFileNmae.find_last_of(_T('\\'));
+      std::basic_string<FMTLOG_CHAR> logFile = d.logFileNmae;
       struct tm timeinfo;
       ::localtime_s(&timeinfo, &CurrentTime);
-      WCHAR szTime[256] { 0 };
-      ::wcsftime(szTime, sizeof(szTime), d.dataFormat.c_str(), &timeinfo);
+      FMTLOG_CHAR szTime[256] { 0 };
+      _tcsftime(szTime, sizeof(szTime), d.dataFormat.c_str(), &timeinfo);
       if (pos1 > pos2)
         logFile.insert(pos1, szTime);
       else
@@ -157,8 +194,8 @@ public:
   // msg: full log msg with header
   // bodyPos: log body index in the msg
   // logFilePos: log file position of this msg
-  typedef void (*LogCBFn)(int64_t ns, LogLevel level, fmt::wstring_view location, size_t basePos,
-                          fmt::wstring_view threadName, fmt::wstring_view msg, size_t bodyPos,
+  typedef void (*LogCBFn)(int64_t ns, LogLevel level, fmt::basic_string_view<FMTLOG_CHAR> location, size_t basePos,
+                          fmt::basic_string_view<FMTLOG_CHAR> threadName, fmt::basic_string_view<FMTLOG_CHAR> msg, size_t bodyPos,
                           size_t logFilePos, void* userData);
 
   // Set a callback function for all log msgs with a mininum log level
@@ -172,10 +209,10 @@ public:
   static void closeLogFile() noexcept;
 
   // Set log header pattern with fmt named arguments
-  static void setHeaderPattern(const wchar_t* pattern);
+  static void setHeaderPattern(const FMTLOG_CHAR* pattern);
 
   // Set a name for current thread, it'll be shown in {t} part in header pattern
-  static void setThreadName(const wchar_t* name) noexcept;
+  static void setThreadName(const FMTLOG_CHAR* name) noexcept;
 
   // Set current log level, lower level log msgs will be discarded
   static inline void setLogLevel(LogLevel logLevel) noexcept;
@@ -263,7 +300,7 @@ public:
   {
     SPSCVarQueueOPT varq;
     bool shouldDeallocate = false;
-    wchar_t name[32];
+    FMTLOG_CHAR name[32];
     size_t nameSize;
   };
 
@@ -394,19 +431,19 @@ public:
     currentLogLevel = INF;
   }
 
-  using Context = fmt::wformat_context;
-  using MemoryBuffer = fmt::basic_memory_buffer<wchar_t, 10000>;
-  typedef const wchar_t* (*FormatToFn)(fmt::wstring_view format, const wchar_t* data, MemoryBuffer& out,
-                                    int& argIdx, std::vector<fmt::basic_format_arg<Context>>& args);
+  using Context = fmt::buffer_context<FMTLOG_CHAR>;
+  using MemoryBuffer = fmt::basic_memory_buffer<FMTLOG_CHAR, 10000>;
+  typedef const FMTLOG_CHAR* (*FormatToFn)(fmt::basic_string_view<FMTLOG_CHAR> format, const FMTLOG_CHAR* data, MemoryBuffer& out,
+                                           int& argIdx, std::vector<fmt::basic_format_arg<Context>>& args);
 
-  static void registerLogInfo(uint32_t& logId, FormatToFn fn, const wchar_t* location, LogLevel level,
-                              fmt::wstring_view fmtString) noexcept;
+  static void registerLogInfo(uint32_t& logId, FormatToFn fn, const FMTLOG_CHAR* location, LogLevel level,
+                              fmt::basic_string_view<FMTLOG_CHAR> fmtString) noexcept;
 
-  static void vformat_to(MemoryBuffer& out, fmt::wstring_view fmt, fmt::wformat_args args);
+  static void vformat_to(MemoryBuffer& out, fmt::basic_string_view<FMTLOG_CHAR> fmt, fmt::basic_format_args<Context> args);
 
-  static size_t formatted_size(fmt::wstring_view fmt, fmt::wformat_args args);
+  static size_t formatted_size(fmt::basic_string_view<FMTLOG_CHAR> fmt, fmt::basic_format_args<Context> args);
 
-  static void vformat_to(wchar_t* out, fmt::wstring_view fmt, fmt::wformat_args args);
+  static void vformat_to(FMTLOG_CHAR* out, fmt::basic_string_view<FMTLOG_CHAR> fmt, fmt::basic_format_args<Context> args);
 
   static typename SPSCVarQueueOPT::MsgHeader* allocMsg(uint32_t size, bool logQFullCB) noexcept;
 
@@ -425,12 +462,12 @@ public:
   { using type = Arg; };
 
   template<typename Arg>
-  struct unNamedType<fmt::detail::named_arg<wchar_t, Arg>>
+  struct unNamedType<fmt::detail::named_arg<FMTLOG_CHAR, Arg>>
   { using type = Arg; };
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
-  template<typename Arg, size_t N, fmt::detail_exported::fixed_string<wchar_t, N> Str>
-  struct unNamedType<fmt::detail::statically_named_arg<Arg, wchar_t, N, Str>>
+  template<typename Arg, size_t N, fmt::detail_exported::fixed_string<FMTLOG_CHAR, N> Str>
+  struct unNamedType<fmt::detail::statically_named_arg<Arg, FMTLOG_CHAR, N, Str>>
   { using type = Arg; };
 #endif
 
@@ -467,7 +504,7 @@ public:
       return getArgSizes<CstringIdx>(cstringSize, arg.value, args...);
     }
     else if constexpr (isCstring<Arg>()) {
-      size_t len = wcslen(arg) + 1;
+      size_t len = _tcslen(arg) + 1;
       cstringSize[CstringIdx] = len;
       return len + getArgSizes<CstringIdx + 1>(cstringSize, args...);
     }
@@ -481,13 +518,13 @@ public:
   }
 
   template<size_t CstringIdx>
-  static inline constexpr wchar_t* encodeArgs(size_t* cstringSize, wchar_t* out) {
+  static inline constexpr FMTLOG_CHAR* encodeArgs(size_t* cstringSize, FMTLOG_CHAR* out) {
     return out;
   }
 
   template<size_t CstringIdx, typename Arg, typename... Args>
-  static inline constexpr wchar_t* encodeArgs(size_t* cstringSize, wchar_t* out, Arg&& arg,
-                                           Args&&... args) {
+  static inline constexpr FMTLOG_CHAR* encodeArgs(size_t* cstringSize, FMTLOG_CHAR* out, Arg&& arg,
+                                                  Args&&... args) {
     if constexpr (isNamedArg<Arg>()) {
       return encodeArgs<CstringIdx>(cstringSize, out, arg.value, std::forward<Args>(args)...);
     }
@@ -517,11 +554,11 @@ public:
   }
 
   template<size_t Idx, size_t NamedIdx>
-  static inline constexpr void storeNamedArgs(fmt::detail::named_arg_info<wchar_t>* named_args_store) {
+  static inline constexpr void storeNamedArgs(fmt::detail::named_arg_info<FMTLOG_CHAR>* named_args_store) {
   }
 
   template<size_t Idx, size_t NamedIdx, typename Arg, typename... Args>
-  static inline constexpr void storeNamedArgs(fmt::detail::named_arg_info<wchar_t>* named_args_store,
+  static inline constexpr void storeNamedArgs(fmt::detail::named_arg_info<FMTLOG_CHAR>* named_args_store,
                                               const Arg& arg, const Args&... args) {
     if constexpr (isNamedArg<Arg>()) {
       named_args_store[NamedIdx] = {arg.name, Idx};
@@ -533,14 +570,14 @@ public:
   }
 
   template<bool ValueOnly, size_t Idx, size_t DestructIdx>
-  static inline const wchar_t* decodeArgs(const wchar_t* in, fmt::basic_format_arg<Context>* args,
-                                       const wchar_t** destruct_args) {
+  static inline const FMTLOG_CHAR* decodeArgs(const FMTLOG_CHAR* in, fmt::basic_format_arg<Context>* args,
+                                              const FMTLOG_CHAR** destruct_args) {
     return in;
   }
 
   template<bool ValueOnly, size_t Idx, size_t DestructIdx, typename Arg, typename... Args>
-  static inline const wchar_t* decodeArgs(const wchar_t* in, fmt::basic_format_arg<Context>* args,
-                                       const wchar_t** destruct_args) {
+  static inline const FMTLOG_CHAR* decodeArgs(const FMTLOG_CHAR* in, fmt::basic_format_arg<Context>* args,
+                                              const FMTLOG_CHAR** destruct_args) {
     using namespace fmtlogdetail;
     using ArgType = fmt::remove_cvref_t<Arg>;
     if constexpr (isNamedArg<ArgType>()) {
@@ -548,8 +585,8 @@ public:
         in, args, destruct_args);
     }
     else if constexpr (isCstring<Arg>() || isString<Arg>()) {
-      size_t size = wcslen(in);
-      fmt::wstring_view v(in, size);
+      size_t size = _tcslen(in);
+      fmt::basic_string_view<FMTLOG_CHAR> v(in, size);
       if constexpr (ValueOnly) {
         fmt::detail::value<Context>& value_ = *(fmt::detail::value<Context>*)(args + Idx);
         value_ = fmt::detail::arg_mapper<Context>().map(v);
@@ -592,10 +629,10 @@ public:
   }
 
   template<size_t DestructIdx>
-  static inline void destructArgs(const wchar_t** destruct_args) {}
+  static inline void destructArgs(const FMTLOG_CHAR** destruct_args) {}
 
   template<size_t DestructIdx, typename Arg, typename... Args>
-  static inline void destructArgs(const wchar_t** destruct_args) {
+  static inline void destructArgs(const FMTLOG_CHAR** destruct_args) {
     using ArgType = fmt::remove_cvref_t<Arg>;
     if constexpr (isNamedArg<ArgType>()) {
       destructArgs<DestructIdx, typename unNamedType<ArgType>::type, Args...>(destruct_args);
@@ -610,12 +647,12 @@ public:
   }
 
   template<typename... Args>
-  static const wchar_t* formatTo(fmt::wstring_view format, const wchar_t* data, MemoryBuffer& out,
-                              int& argIdx, std::vector<fmt::basic_format_arg<Context>>& args) {
+  static const FMTLOG_CHAR* formatTo(fmt::basic_string_view<FMTLOG_CHAR> format, const FMTLOG_CHAR* data, MemoryBuffer& out,
+                                     int& argIdx, std::vector<fmt::basic_format_arg<Context>>& args) {
     constexpr size_t num_args = sizeof...(Args);
     constexpr size_t num_dtors = fmt::detail::count<needCallDtor<Args>()...>();
-    const wchar_t* dtor_args[(std::max)(num_dtors, (size_t)1)];
-    const wchar_t* ret;
+    const FMTLOG_CHAR* dtor_args[(std::max)(num_dtors, (size_t)1)];
+    const FMTLOG_CHAR* ret;
     if (argIdx < 0) {
       argIdx = (int)args.size();
       args.resize(argIdx + num_args);
@@ -631,40 +668,40 @@ public:
   }
 
   template<bool Reorder, typename... Args>
-  static fmt::wstring_view unNameFormat(fmt::wstring_view in, uint32_t* reorderIdx,
-                                       const Args&... args) {
+  static fmt::basic_string_view<FMTLOG_CHAR> unNameFormat(fmt::basic_string_view<FMTLOG_CHAR> in, uint32_t* reorderIdx,
+                                                          const Args&... args) {
     constexpr size_t num_named_args = fmt::detail::count<isNamedArg<Args>()...>();
     if constexpr (num_named_args == 0) {
       return in;
     }
-    const wchar_t* begin = in.data();
-    const wchar_t* p = begin;
-    std::unique_ptr<wchar_t[]> unnamed_str(new wchar_t[in.size() + 1 + num_named_args * 5]);
-    fmt::detail::named_arg_info<wchar_t> named_args[(std::max)(num_named_args, (size_t)1)];
+    const FMTLOG_CHAR* begin = in.data();
+    const FMTLOG_CHAR* p = begin;
+    std::unique_ptr<FMTLOG_CHAR[]> unnamed_str(new FMTLOG_CHAR[in.size() + 1 + num_named_args * 5]);
+    fmt::detail::named_arg_info<FMTLOG_CHAR> named_args[(std::max)(num_named_args, (size_t)1)];
     storeNamedArgs<0, 0>(named_args, args...);
 
-    wchar_t* out = (wchar_t*)unnamed_str.get();
+    FMTLOG_CHAR* out = (FMTLOG_CHAR*)unnamed_str.get();
     uint8_t arg_idx = 0;
     while (true) {
       auto c = *p++;
       if (!c) {
         size_t copy_size = p - begin - 1;
-        memcpy(out, begin, copy_size * 2);
+        memcpy(out, begin, copy_size * sizeof(FMTLOG_CHAR));
         out += copy_size;
         break;
       }
-      if (c != L'{') continue;
+      if (c != _T('{')) continue;
       size_t copy_size = p - begin;
-      memcpy(out, begin, copy_size * 2);
+      memcpy(out, begin, copy_size * sizeof(FMTLOG_CHAR));
       out += copy_size;
       begin = p;
       c = *p++;
       if (!c) fmt::detail::throw_format_error("invalid format string");
       if (fmt::detail::is_name_start(c)) {
-        while ((fmt::detail::is_name_start(c = *p) || (L'0' <= c && c <= L'9'))) {
+        while ((fmt::detail::is_name_start(c = *p) || (_T('0') <= c && c <= _T('9')))) {
           ++p;
         }
-        fmt::wstring_view name(begin, p - begin);
+        fmt::basic_string_view<FMTLOG_CHAR> name(begin, p - begin);
         int id = -1;
         for (size_t i = 0; i < num_named_args; ++i) {
           if (named_args[i].name == name) {
@@ -677,7 +714,7 @@ public:
           reorderIdx[id] = arg_idx++;
         }
         else {
-          out = fmt::wformat_to(out, L"{}", id);
+          out = fmt::format_to(out, _T("{}"), id);
         }
       }
       else {
@@ -685,30 +722,30 @@ public:
       }
       begin = p;
     }
-    const wchar_t* ptr = unnamed_str.release();
-    return fmt::wstring_view(ptr, out - ptr);
+    const FMTLOG_CHAR* ptr = unnamed_str.release();
+    return fmt::basic_string_view<FMTLOG_CHAR>(ptr, out - ptr);
   }
 
 public:
   template<typename... Args>
   inline void log(
-    uint32_t& logId, int64_t tsc, const wchar_t* location, LogLevel level,
+    uint32_t& logId, int64_t tsc, const FMTLOG_CHAR* location, LogLevel level,
     fmt::format_string<typename fmtlogdetail::UnrefPtr<fmt::remove_cvref_t<Args>>::type...> format,
     Args&&... args) noexcept {
     if (!logId) {
-      auto unnamed_format = unNameFormat<false>(fmt::wstring_view(format), nullptr, args...);
+      auto unnamed_format = unNameFormat<false>(fmt::basic_string_view<FMTLOG_CHAR>(format), nullptr, args...);
       registerLogInfo(logId, formatTo<Args...>, location, level, unnamed_format);
     }
     constexpr size_t num_cstring = fmt::detail::count<isCstring<Args>()...>();
     size_t cstringSizes[(std::max)(num_cstring, (size_t)1)];
-    uint32_t alloc_size = 8 + (uint32_t)getArgSizes<0>(cstringSizes, args...) * 2;
+    uint32_t alloc_size = 8 + (uint32_t)getArgSizes<0>(cstringSizes, args...) * sizeof(FMTLOG_CHAR);
     bool q_full_cb = true;
     do {
       if (auto header = allocMsg(alloc_size, q_full_cb)) {
         header->logId = logId;
-        wchar_t* out = (wchar_t*)(header + 1);
+        FMTLOG_CHAR* out = (FMTLOG_CHAR*)(header + 1);
         *(int64_t*)out = tsc;
-        out += 4;
+        out += (8 / sizeof(FMTLOG_CHAR));
         encodeArgs<0>(cstringSizes, out, std::forward<Args>(args)...);
         header->push(alloc_size);
         break;
@@ -718,21 +755,21 @@ public:
   }
 
   template<typename... Args>
-  inline void logOnce(const wchar_t* location, LogLevel level, fmt::wformat_string<Args...> format,
+  inline void logOnce(const FMTLOG_CHAR* location, LogLevel level, fmt::wformat_string<Args...> format,
                       Args&&... args) {
-    fmt::wstring_view sv(format);
+    fmt::basic_string_view<FMTLOG_CHAR> sv(format);
     auto&& fmt_args = fmt::make_wformat_args(args...);
     uint32_t fmt_size = formatted_size(sv, fmt_args);
-    uint32_t alloc_size = 8 + 8 + fmt_size * 2; // byte size
+    uint32_t alloc_size = 8 + 8 + fmt_size * sizeof(FMTLOG_CHAR);
     bool q_full_cb = true;
     do {
       if (auto header = allocMsg(alloc_size, q_full_cb)) {
         header->logId = (uint32_t)level;
-        wchar_t* out = (wchar_t*)(header + 1);
+        FMTLOG_CHAR* out = (FMTLOG_CHAR*)(header + 1);
         *(int64_t*)out = tscns.rdtsc();
-        out += 4;
-        *(const wchar_t**)out = location;
-        out += 4;
+        out += (8 / sizeof(FMTLOG_CHAR));
+        *(const FMTLOG_CHAR**)out = location;
+        out += (8 / sizeof(FMTLOG_CHAR));
         vformat_to(out, sv, fmt_args);
         header->push(alloc_size);
         break;
@@ -741,18 +778,18 @@ public:
     } while (FMTLOG_BLOCK);
   }
 
-  inline void logOnceText(const wchar_t* location, LogLevel level, const wchar_t* logText) {
-    uint32_t fmt_size = (uint32_t)wcslen(logText) * 2; // byte size
+  inline void logOnceText(const FMTLOG_CHAR* location, LogLevel level, const FMTLOG_CHAR* logText) {
+    uint32_t fmt_size = (uint32_t)_tcslen(logText) * sizeof(FMTLOG_CHAR);
     uint32_t alloc_size = 8 + 8 + fmt_size;
     bool q_full_cb = true;
     do {
       if (auto header = allocMsg(alloc_size, q_full_cb)) {
         header->logId = (uint32_t)level;
-        wchar_t* out = (wchar_t*)(header + 1);
+        FMTLOG_CHAR* out = (FMTLOG_CHAR*)(header + 1);
         *(int64_t*)out = tscns.rdtsc();
-        out += 4;
-        *(const wchar_t**)out = location;
-        out += 4;
+        out += (8 / sizeof(FMTLOG_CHAR));
+        *(const FMTLOG_CHAR**)out = location;
+        out += (8 / sizeof(FMTLOG_CHAR));
         memcpy(out, logText, fmt_size);
         header->push(alloc_size);
         break;
@@ -841,7 +878,7 @@ inline bool fmtlogT<_>::checkLogLevel(LogLevel logLevel) noexcept {
     fmtlogWrapper<>::impl.logOnce(source_location, level, format, ##__VA_ARGS__);                  \
   } while (0)
 
-#define LOG_LIMIT_LOC(source_location, min_interval, level, log_content)                           \
+#define FMTLOG_LIMIT_PLAIN(source_location, min_interval, level, log_content)                      \
   do {                                                                                             \
     static int64_t limitNs = 0;                                                                    \
     if (!fmtlog::checkLogLevel(level)) break;                                                      \
@@ -852,7 +889,7 @@ inline bool fmtlogT<_>::checkLogLevel(LogLevel logLevel) noexcept {
     fmtlogWrapper<>::impl.logOnceText(source_location, level, log_content);                        \
   } while (0)
 
-#define LOG_ONCE_LOC(source_location, level, log_content)                                          \
+#define FMTLOG_ONCE_PLAIN(source_location, level, log_content)                                     \
   do {                                                                                             \
     if (!fmtlog::checkLogLevel(level)) break;                                                      \
     fmtlogWrapper<>::impl.logOnceText(source_location, level, log_content);                        \

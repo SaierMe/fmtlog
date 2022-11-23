@@ -55,43 +55,43 @@ public:
   {
   public:
     static const int Size = SIZE;
-    wchar_t s[SIZE];
+    FMTLOG_CHAR s[SIZE];
 
     Str() {}
-    Str(const wchar_t* p) { *this = *(const Str<SIZE>*)p; }
+    Str(const FMTLOG_CHAR* p) { *this = *(const Str<SIZE>*)p; }
 
-    wchar_t& operator[](int i) { return s[i]; }
-    wchar_t operator[](int i) const { return s[i]; }
+    FMTLOG_CHAR& operator[](int i) { return s[i]; }
+    FMTLOG_CHAR operator[](int i) const { return s[i]; }
 
     template<typename T>
     void fromi(T num) {
       if constexpr (Size & 1) {
-        s[Size - 1] = L'0' + (num % 10);
+        s[Size - 1] = _T('0') + (num % 10);
         num /= 10;
       }
       switch (Size & -2) {
-        case 18: *(uint32_t*)(s + 16) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 16: *(uint32_t*)(s + 14) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 14: *(uint32_t*)(s + 12) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 12: *(uint32_t*)(s + 10) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 10: *(uint32_t*)(s + 8) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 8: *(uint32_t*)(s + 6) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 6: *(uint32_t*)(s + 4) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 4: *(uint32_t*)(s + 2) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
-        case 2: *(uint32_t*)(s + 0) = *(uint32_t*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 18: *(FMTLOG_DWORD*)(s + 16) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 16: *(FMTLOG_DWORD*)(s + 14) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 14: *(FMTLOG_DWORD*)(s + 12) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 12: *(FMTLOG_DWORD*)(s + 10) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 10: *(FMTLOG_DWORD*)(s + 8) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 8: *(FMTLOG_DWORD*)(s + 6) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 6: *(FMTLOG_DWORD*)(s + 4) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 4: *(FMTLOG_DWORD*)(s + 2) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
+        case 2: *(FMTLOG_DWORD*)(s + 0) = *(FMTLOG_DWORD*)(digit_pairs + ((num % 100) << 1)); num /= 100;
       }
     }
 
-    static constexpr const wchar_t* digit_pairs = L"00010203040506070809"
-                                                  L"10111213141516171819"
-                                                  L"20212223242526272829"
-                                                  L"30313233343536373839"
-                                                  L"40414243444546474849"
-                                                  L"50515253545556575859"
-                                                  L"60616263646566676869"
-                                                  L"70717273747576777879"
-                                                  L"80818283848586878889"
-                                                  L"90919293949596979899";
+    static constexpr const FMTLOG_CHAR* digit_pairs = _T("00010203040506070809")
+                                                      _T("10111213141516171819")
+                                                      _T("20212223242526272829")
+                                                      _T("30313233343536373839")
+                                                      _T("40414243444546474849")
+                                                      _T("50515253545556575859")
+                                                      _T("60616263646566676869")
+                                                      _T("70717273747576777879")
+                                                      _T("80818283848586878889")
+                                                      _T("90919293949596979899");
   };
 
   fmtlogDetailT()
@@ -102,16 +102,16 @@ public:
     fmtlogWrapper<>::impl.init();
     resetDate();
     fmtlog::setLogFile(stdout);
-    setHeaderPattern(L"{HMSf} {s:<10} {L}[{t:<5}] ");
+    setHeaderPattern(_T("{HMSf} {s:<10} {L}[{t:<5}] "));
     logInfos.reserve(32);
     bgLogInfos.reserve(128);
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::DBG, fmt::wstring_view());
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::INF, fmt::wstring_view());
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::WRN, fmt::wstring_view());
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::ERR, fmt::wstring_view());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::DBG, fmt::basic_string_view<FMTLOG_CHAR>());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::INF, fmt::basic_string_view<FMTLOG_CHAR>());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::WRN, fmt::basic_string_view<FMTLOG_CHAR>());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::ERR, fmt::basic_string_view<FMTLOG_CHAR>());
     threadBuffers.reserve(8);
     bgThreadBuffers.reserve(8);
-    memset(membuf.data(), 0, membuf.capacity() * 2);
+    memset(membuf.data(), 0, membuf.capacity() * sizeof(FMTLOG_CHAR));
   }
 
   ~fmtlogDetailT() {
@@ -120,46 +120,59 @@ public:
     closeLogFile();
   }
 
-  void setHeaderPattern(const wchar_t* pattern) {
+  void setHeaderPattern(const FMTLOG_CHAR* pattern) {
     if (shouldDeallocateHeader) delete[] headerPattern.data();
     using namespace fmt::literals;
     for (int i = 0; i < parttenArgSize; i++) {
       reorderIdx[i] = parttenArgSize - 1;
     }
+#ifdef FMTLOG_UNICODE_STRING
     headerPattern = fmtlog::unNameFormat<true>(
       pattern, reorderIdx, L"a"_a = L"", L"b"_a = L"", L"C"_a = L"", L"Y"_a = L"", L"m"_a = L"", L"d"_a = L"",
       L"t"_a = L"thread name", L"F"_a = L"", L"f"_a = L"", L"e"_a = L"", L"S"_a = L"", L"M"_a = L"", L"H"_a = L"",
       L"l"_a = fmtlog::LogLevel(), L"s"_a = L"fmtlog.cc:123", L"g"_a = L"/home/raomeng/fmtlog/fmtlog.cc:123", L"Ymd"_a = L"",
       L"HMS"_a = L"", L"HMSe"_a = L"", L"HMSf"_a = L"", L"HMSF"_a = L"", L"YmdHMS"_a = L"", L"YmdHMSe"_a = L"", L"YmdHMSf"_a = L"",
       L"YmdHMSF"_a = L"", L"L"_a = fmtlog::LogLevel());
+#else
+    headerPattern = fmtlog::unNameFormat<true>(
+      pattern, reorderIdx, "a"_a = "", "b"_a = "", "C"_a = "", "Y"_a = "", "m"_a = "", "d"_a = "",
+      "t"_a = "thread name", "F"_a = "", "f"_a = "", "e"_a = "", "S"_a = "", "M"_a = "", "H"_a = "",
+      "l"_a = fmtlog::LogLevel(), "s"_a = _T("fmtlog.cc:123"), "g"_a = "/home/raomeng/fmtlog/fmtlog.cc:123", "Ymd"_a = "",
+      "HMS"_a = "", "HMSe"_a = "", "HMSf"_a = "", "HMSF"_a = "", "YmdHMS"_a = "", "YmdHMSe"a = "", "YmdHMSf"_a = "",
+      "YmdHMSF"_a = "", "L"_a = fmtlog::LogLevel());
+#endif
     shouldDeallocateHeader = headerPattern.data() != pattern;
 
-    setArg<0>(fmt::wstring_view(weekdayName.s, 3));
-    setArg<1>(fmt::wstring_view(monthName.s, 3));
-    setArg<2>(fmt::wstring_view(&year[2], 2));
-    setArg<3>(fmt::wstring_view(year.s, 4));
-    setArg<4>(fmt::wstring_view(month.s, 2));
-    setArg<5>(fmt::wstring_view(day.s, 2));
-    setArg<6>(fmt::wstring_view());
-    setArg<7>(fmt::wstring_view(nanosecond.s, 9));
-    setArg<8>(fmt::wstring_view(nanosecond.s, 6));
-    setArg<9>(fmt::wstring_view(nanosecond.s, 3));
-    setArg<10>(fmt::wstring_view(second.s, 2));
-    setArg<11>(fmt::wstring_view(minute.s, 2));
-    setArg<12>(fmt::wstring_view(hour.s, 2));
-    setArg<13>(fmt::wstring_view(logLevel.s, 3));
-    setArg<14>(fmt::wstring_view());
-    setArg<15>(fmt::wstring_view());
-    setArg<16>(fmt::wstring_view(year.s, 10)); // Ymd
-    setArg<17>(fmt::wstring_view(hour.s, 8));  // HMS
-    setArg<18>(fmt::wstring_view(hour.s, 12)); // HMSe
-    setArg<19>(fmt::wstring_view(hour.s, 15)); // HMSf
-    setArg<20>(fmt::wstring_view(hour.s, 18)); // HMSF
-    setArg<21>(fmt::wstring_view(year.s, 19));   // YmdHMS
-    setArg<22>(fmt::wstring_view(year.s, 23));   // YmdHMSe
-    setArg<23>(fmt::wstring_view(year.s, 26));   // YmdHMSf
-    setArg<24>(fmt::wstring_view(year.s, 29));   // YmdHMSF
-    setArg<25>(fmt::wstring_view(logLevel_SC.s, 2));
+    setArg<0>(fmt::basic_string_view<FMTLOG_CHAR>(weekdayName.s, 3));
+    setArg<1>(fmt::basic_string_view<FMTLOG_CHAR>(monthName.s, 3));
+    setArg<2>(fmt::basic_string_view<FMTLOG_CHAR>(&year[2], 2));
+    setArg<3>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 4));
+    setArg<4>(fmt::basic_string_view<FMTLOG_CHAR>(month.s, 2));
+    setArg<5>(fmt::basic_string_view<FMTLOG_CHAR>(day.s, 2));
+    setArg<6>(fmt::basic_string_view<FMTLOG_CHAR>());
+    setArg<7>(fmt::basic_string_view<FMTLOG_CHAR>(nanosecond.s, 9));
+    setArg<8>(fmt::basic_string_view<FMTLOG_CHAR>(nanosecond.s, 6));
+    setArg<9>(fmt::basic_string_view<FMTLOG_CHAR>(nanosecond.s, 3));
+    setArg<10>(fmt::basic_string_view<FMTLOG_CHAR>(second.s, 2));
+    setArg<11>(fmt::basic_string_view<FMTLOG_CHAR>(minute.s, 2));
+    setArg<12>(fmt::basic_string_view<FMTLOG_CHAR>(hour.s, 2));
+    setArg<13>(fmt::basic_string_view<FMTLOG_CHAR>(logLevel.s, 3));
+    setArg<14>(fmt::basic_string_view<FMTLOG_CHAR>());
+    setArg<15>(fmt::basic_string_view<FMTLOG_CHAR>());
+    setArg<16>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 10)); // Ymd
+    setArg<17>(fmt::basic_string_view<FMTLOG_CHAR>(hour.s, 8));  // HMS
+    setArg<18>(fmt::basic_string_view<FMTLOG_CHAR>(hour.s, 12)); // HMSe
+    setArg<19>(fmt::basic_string_view<FMTLOG_CHAR>(hour.s, 15)); // HMSf
+    setArg<20>(fmt::basic_string_view<FMTLOG_CHAR>(hour.s, 18)); // HMSF
+    setArg<21>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 19));   // YmdHMS
+    setArg<22>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 23));   // YmdHMSe
+    setArg<23>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 26));   // YmdHMSf
+    setArg<24>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 29));   // YmdHMSF
+#ifdef FMTLOG_UNICODE_STRING
+    setArg<25>(fmt::basic_string_view<FMTLOG_CHAR>(logLevelCN.s, 2));
+#else
+    setArg<25>(fmt::basic_string_view<FMTLOG_CHAR>(logLevelCN.s, 6));
+#endif
   }
 
   class ThreadBufferDestroyer
@@ -180,7 +193,7 @@ public:
   struct StaticLogInfo
   {
     // Constructor
-    constexpr StaticLogInfo(fmtlog::FormatToFn fn, const wchar_t* loc, fmtlog::LogLevel level, fmt::wstring_view fmtString)
+    constexpr StaticLogInfo(fmtlog::FormatToFn fn, const FMTLOG_CHAR* loc, fmtlog::LogLevel level, fmt::basic_string_view<FMTLOG_CHAR> fmtString)
       : formatToFn(fn)
       , formatString(fmtString)
       , location(loc)
@@ -188,30 +201,30 @@ public:
       , argIdx(-1) {}
 
     void processLocation() {
-      size_t size = wcslen(location);
-      const wchar_t* p = location + size;
+      size_t size = _tcslen(location);
+      const FMTLOG_CHAR* p = location + size;
       if (size > 255) {
         location = p - 255;
       }
-      endPos = (uint8_t)(p - location);
-      const wchar_t* base = location;
+      endPos = static_cast<uint8_t>(p - location);
+      const FMTLOG_CHAR* base = location;
       while (p > location) {
-        wchar_t c = *--p;
-        if (c == L'/' || c == L'\\') {
+        FMTLOG_CHAR c = *--p;
+        if (c == _T('/') || c == _T('\\')) {
           base = p + 1;
           break;
         }
       }
-      basePos = (uint8_t)(base - location);
+      basePos = static_cast<uint8_t>(base - location);
     }
 
-    inline fmt::wstring_view getBase() { return fmt::wstring_view(location + basePos, endPos - basePos); }
+    inline fmt::basic_string_view<FMTLOG_CHAR> getBase() { return fmt::basic_string_view<FMTLOG_CHAR>(location + basePos, endPos - basePos); }
 
-    inline fmt::wstring_view getLocation() { return fmt::wstring_view(location, endPos); }
+    inline fmt::basic_string_view<FMTLOG_CHAR> getLocation() { return fmt::basic_string_view<FMTLOG_CHAR>(location, endPos); }
 
     fmtlog::FormatToFn formatToFn;
-    fmt::wstring_view formatString;
-    const wchar_t* location;
+    fmt::basic_string_view<FMTLOG_CHAR> formatString;
+    const FMTLOG_CHAR* location;
     uint8_t basePos;
     uint8_t endPos;
     fmtlog::LogLevel logLevel;
@@ -220,7 +233,7 @@ public:
 
   static thread_local ThreadBufferDestroyer sbc;
   int64_t midnightNs;
-  fmt::wstring_view headerPattern;
+  fmt::basic_string_view<FMTLOG_CHAR> headerPattern;
   bool shouldDeallocateHeader = false;
   FILE* outputFp = nullptr;
   bool manageFp = false;
@@ -244,8 +257,8 @@ public:
   std::vector<StaticLogInfo> logInfos;
   std::vector<StaticLogInfo> bgLogInfos;
 
-  std::wstring logFileNmae;
-  std::wstring dataFormat;
+  std::basic_string<FMTLOG_CHAR> logFileNmae;
+  std::basic_string<FMTLOG_CHAR> dataFormat;
   HANDLE hTimer = nullptr;
   time_t targetTimeStamp = 0;
   int32_t timeDiff = 0;
@@ -262,20 +275,24 @@ public:
   Str<3> weekdayName;
   Str<3> monthName;
   Str<4> year;
-  wchar_t dash1 = L'-';
+  FMTLOG_CHAR dash1 = _T('-');
   Str<2> month;
-  wchar_t dash2 = L'-';
+  FMTLOG_CHAR dash2 = _T('-');
   Str<2> day;
-  wchar_t space = L' ';
+  FMTLOG_CHAR space = _T(' ');
   Str<2> hour;
-  wchar_t colon1 = L':';
+  FMTLOG_CHAR colon1 = _T(':');
   Str<2> minute;
-  wchar_t colon2 = L':';
+  FMTLOG_CHAR colon2 = _T(':');
   Str<2> second;
-  wchar_t dot1 = L'.';
+  FMTLOG_CHAR dot1 = _T('.');
   Str<9> nanosecond;
   Str<3> logLevel;
-  Str<2> logLevel_SC;
+#ifdef FMTLOG_UNICODE_STRING
+  Str<2> logLevelCN;
+#else
+  Str<6> logLevelCN;
+#endif
   std::vector<fmt::basic_format_arg<fmtlog::Context>> args;
 
   volatile bool threadRunning = false;
@@ -289,9 +306,9 @@ public:
     year.fromi(1900 + timeinfo->tm_year);
     month.fromi(1 + timeinfo->tm_mon);
     day.fromi(timeinfo->tm_mday);
-    const wchar_t* weekdays[7] = {L"Sun", L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat"};
+    const FMTLOG_CHAR* weekdays[7] = {_T("Sun"), _T("Mon"), _T("Tue"), _T("Wed"), _T("Thu"), _T("Fri"), _T("Sat")};
     weekdayName = weekdays[timeinfo->tm_wday];
-    const wchar_t* monthNames[12] = {L"Jan", L"Feb", L"Mar", L"Apr", L"May", L"Jun", L"Jul", L"Aug", L"Sep", L"Oct", L"Nov", L"Dec"};
+    const FMTLOG_CHAR* monthNames[12] = {_T("Jan"), _T("Feb"), _T("Mar"), _T("Apr"), _T("May"), _T("Jun"), _T("Jul"), _T("Aug"), _T("Sep"), _T("Oct"), _T("Nov"), _T("Dec")};
     monthName = monthNames[timeinfo->tm_mon];
   }
 
@@ -304,7 +321,7 @@ public:
     uint32_t tid = static_cast<uint32_t>(::syscall(SYS_gettid));
 #endif
     fmtlog::threadBuffer->nameSize =
-      fmt::format_to_n(fmtlog::threadBuffer->name, sizeof(fmtlog::threadBuffer->name), L"{}", tid).size;
+      fmt::format_to_n(fmtlog::threadBuffer->name, sizeof(fmtlog::threadBuffer->name), _T("{}"), tid).size;
     sbc.threadBufferCreated();
 
     std::unique_lock<std::mutex> guard(bufferMutex);
@@ -324,13 +341,13 @@ public:
 
   void flushLogFile() {
     if (outputFp) {
-      fwrite(membuf.data(), 2, membuf.size(), outputFp);
+      fwrite(membuf.data(), sizeof(FMTLOG_CHAR), membuf.size(), outputFp);
       if (!manageFp) fflush(outputFp);
       else
         fpos += membuf.size();
     }
     membuf.clear();
-    memset(membuf.data(), 0, membuf.capacity() * 2);
+    memset(membuf.data(), 0, membuf.capacity() * sizeof(FMTLOG_CHAR));
     nextFlushTime = (std::numeric_limits<int64_t>::max)();
   }
 
@@ -363,20 +380,20 @@ public:
     if (thr.joinable()) thr.join();
   }
 
-  void handleLog(fmt::wstring_view threadName, const fmtlog::SPSCVarQueueOPT::MsgHeader* header) {
+  void handleLog(fmt::basic_string_view<FMTLOG_CHAR> threadName, const fmtlog::SPSCVarQueueOPT::MsgHeader* header) {
     setArgVal<6>(threadName);
     StaticLogInfo& info = bgLogInfos[header->logId];
-    const wchar_t* data = (const wchar_t*)(header + 1);
-    const wchar_t* end;
+    const FMTLOG_CHAR* data = (const FMTLOG_CHAR*)(header + 1);
+    const FMTLOG_CHAR* end;
     int64_t tsc = *(int64_t*)data;
-    data += 4;
+    data += (8 / sizeof(FMTLOG_CHAR));
     if (!info.formatToFn) { // log once
-      info.location = *(const wchar_t**)data;
-      data += 4;
+      info.location = *(const FMTLOG_CHAR**)data;
+      data += (8 / sizeof(FMTLOG_CHAR));
       info.processLocation();
-      end = data + (header->size - 24) / 2;
+      end = data + (header->size - 24) / sizeof(FMTLOG_CHAR);
     } else {
-      end = data + (header->size - 16) / 2;
+      end = data + (header->size - 16) / sizeof(FMTLOG_CHAR);
     }
     int64_t ts = fmtlogWrapper<>::impl.tscns.tsc2ns(tsc);
     // the date could go back when polling different threads
@@ -387,7 +404,7 @@ public:
     t /= 60;
     minute.fromi(t % 60);
     t /= 60;
-    uint32_t h = (uint32_t)t; // hour
+    uint32_t h = static_cast<uint32_t>(t); // hour
     if (h > 23) {
       h %= 24;
       resetDate();
@@ -395,8 +412,9 @@ public:
     hour.fromi(h);
     setArgVal<14>(info.getBase());
     setArgVal<15>(info.getLocation());
-    logLevel = (const wchar_t*)L"DBG INF WRN ERR OFF" + (info.logLevel << 2);
-    logLevel_SC = (const wchar_t*)L"调试 信息 警告 错误 关闭" + (info.logLevel * 3);
+    logLevel = (const FMTLOG_CHAR*)_T("DBG INF WRN ERR OFF") + (info.logLevel << 2);
+    const FMTLOG_CHAR* logLevelCNs[5] = {_T("调试"), _T("信息"), _T("警告"), _T("错误"), _T("关闭")};
+    logLevelCN = logLevelCNs[info.logLevel];
     size_t headerPos = membuf.size();
     fmtlog::vformat_to(membuf, headerPattern, fmt::basic_format_args(args.data(), parttenArgSize));
     size_t bodyPos = membuf.size();
@@ -404,15 +422,15 @@ public:
       info.formatToFn(info.formatString, data, membuf, info.argIdx, args);
     }
     else { // log once
-      membuf.append(fmt::wstring_view(data, end - data));
+      membuf.append(fmt::basic_string_view<FMTLOG_CHAR>(data, end - data));
     }
 
     if (logCB && info.logLevel >= minCBLogLevel) {
       logCB(ts, info.logLevel, info.getLocation(), info.basePos, threadName,
-            fmt::wstring_view(membuf.data() + headerPos, membuf.size() - headerPos), bodyPos - headerPos,
+            fmt::basic_string_view<FMTLOG_CHAR>(membuf.data() + headerPos, membuf.size() - headerPos), bodyPos - headerPos,
             fpos + headerPos, logQFullCBArg);
     }
-    membuf.push_back(L'\r'); membuf.push_back(L'\n');
+    membuf.push_back(_T('\r')); membuf.push_back(_T('\n'));
     if (membuf.size() >= flushBufSize || info.logLevel >= flushLogLevel) {
       flushLogFile();
     }
@@ -466,7 +484,7 @@ public:
     if (bgThreadBuffers.empty()) return;
 
     // build heap
-    for (int i = (int)bgThreadBuffers.size() / 2; i >= 0; i--) {
+    for (int i = static_cast<int>(bgThreadBuffers.size() / 2); i >= 0; i--) {
       adjustHeap(i);
     }
 
@@ -474,7 +492,7 @@ public:
       auto h = bgThreadBuffers[0].header;
       if (!h || h->logId >= bgLogInfos.size() || *(int64_t*)(h + 1) >= tsc) break;
       auto tb = bgThreadBuffers[0].tb;
-      handleLog(fmt::wstring_view(tb->name, tb->nameSize), h);
+      handleLog(fmt::basic_string_view<FMTLOG_CHAR>(tb->name, tb->nameSize), h);
       tb->varq.pop();
       bgThreadBuffers[0].header = tb->varq.front();
       adjustHeap(0);
@@ -506,30 +524,30 @@ template<int _>
 fmtlogDetailT<> fmtlogDetailWrapper<_>::impl;
 
 template<int _>
-void fmtlogT<_>::registerLogInfo(uint32_t& logId, FormatToFn fn, const wchar_t* location,
-                                 LogLevel level, fmt::wstring_view fmtString) noexcept {
+void fmtlogT<_>::registerLogInfo(uint32_t& logId, FormatToFn fn, const FMTLOG_CHAR* location,
+                                 LogLevel level, fmt::basic_string_view<FMTLOG_CHAR> fmtString) noexcept {
   auto& d = fmtlogDetailWrapper<>::impl;
   std::lock_guard<std::mutex> lock(d.logInfoMutex);
   if (logId) return;
-  logId = (uint32_t)(d.logInfos.size() + d.bgLogInfos.size());
+  logId = static_cast<uint32_t>(d.logInfos.size() + d.bgLogInfos.size());
   d.logInfos.emplace_back(fn, location, level, fmtString);
 }
 
 template<int _>
-void fmtlogT<_>::vformat_to(fmtlog::MemoryBuffer& out, fmt::wstring_view fmt,
-                            fmt::wformat_args args) {
+void fmtlogT<_>::vformat_to(fmtlog::MemoryBuffer& out, fmt::basic_string_view<FMTLOG_CHAR> fmt,
+                            fmt::basic_format_args<Context> args) {
   fmt::detail::vformat_to(out, fmt, args);
 }
 
 template<int _>
-size_t fmtlogT<_>::formatted_size(fmt::wstring_view fmt, fmt::wformat_args args) {
-  auto buf = fmt::detail::counting_buffer<wchar_t>();
+size_t fmtlogT<_>::formatted_size(fmt::basic_string_view<FMTLOG_CHAR> fmt, fmt::basic_format_args<Context> args) {
+  auto buf = fmt::detail::counting_buffer<FMTLOG_CHAR>();
   fmt::detail::vformat_to(buf, fmt, args);
   return buf.count();
 }
 
 template<int _>
-void fmtlogT<_>::vformat_to(wchar_t* out, fmt::wstring_view fmt, fmt::wformat_args args) {
+void fmtlogT<_>::vformat_to(FMTLOG_CHAR* out, fmt::basic_string_view<FMTLOG_CHAR> fmt, fmt::basic_format_args<Context> args) {
   fmt::vformat_to(out, fmt, args);
 }
 
@@ -555,9 +573,9 @@ void fmtlogT<_>::preallocate() noexcept {
 }
 
 template<int _>
-bool fmtlogT<_>::setLogFile(const wchar_t* filename, bool truncate) {
+bool fmtlogT<_>::setLogFile(const FMTLOG_CHAR* filename, bool truncate) {
   auto& d = fmtlogDetailWrapper<>::impl;
-  FILE* newFp = _wfopen(filename, truncate ? L"wb" : L"ab");
+  FILE* newFp = _tfopen(filename, truncate ? _T("wb") : _T("ab"));
   if (!newFp) {
     /*
     std::string err = fmt::format("Unable to open file: {}", strerror(errno));
@@ -569,8 +587,12 @@ bool fmtlogT<_>::setLogFile(const wchar_t* filename, bool truncate) {
   fseek(newFp, 0, SEEK_END);
   d.fpos = ftell(newFp);
   if (d.fpos == 0) {
-    const unsigned char cUtf16leBom[2]{0xFF, 0xFE};
-    fwrite(&cUtf16leBom, 1, 2, newFp);
+#ifdef FMTLOG_UNICODE_STRING
+    const unsigned char utfBom[2]{0xFF, 0xFE};
+#else
+    const unsigned char utfBom[3]{0xEF, 0xBB, 0xBF};
+#endif
+    fwrite(&utfBom, 1, sizeof(utfBom), newFp);
   }
 
   closeLogFile();
@@ -594,15 +616,15 @@ void fmtlogT<_>::setLogFile(FILE* fp, bool manageFp) {
 }
 
 template<int _>
-bool fmtlogT<_>::setDailyLogFile(const wchar_t* filename, bool truncate, int32_t hour, int32_t second, const wchar_t* DateFormat) noexcept {
+bool fmtlogT<_>::setDailyLogFile(const FMTLOG_CHAR* filename, bool truncate, int32_t hour, int32_t second, const FMTLOG_CHAR* DateFormat) noexcept {
   auto& d = fmtlogDetailWrapper<>::impl;
   d.logFileNmae = filename;
-  auto pos1 = d.logFileNmae.find_last_of(L'.');
-  auto pos2 = d.logFileNmae.find_last_of(L'\\');
-  if (pos1 == std::wstring::npos || pos2 == std::wstring::npos) {
+  auto pos1 = d.logFileNmae.find_last_of(_T('.'));
+  auto pos2 = d.logFileNmae.find_last_of(_T('\\'));
+  if (pos1 == std::basic_string<FMTLOG_CHAR>::npos || pos2 == std::basic_string<FMTLOG_CHAR>::npos) {
     return false;
   }
-  std::wstring logFile = d.logFileNmae;
+  std::basic_string<FMTLOG_CHAR> logFile = d.logFileNmae;
   d.timeDiff = (((24 + hour) * 60) + second) * 60;
   if (!::CreateTimerQueueTimer(&d.hTimer, 0, reinterpret_cast<WAITORTIMERCALLBACK>(&switchLogFileCallBack), reinterpret_cast<PVOID>(d.timeDiff), 0, 60 * 1000, WT_EXECUTEINTIMERTHREAD)) {
     return false;
@@ -610,8 +632,8 @@ bool fmtlogT<_>::setDailyLogFile(const wchar_t* filename, bool truncate, int32_t
   d.targetTimeStamp = std::time(nullptr);
   struct tm timeinfo;
   ::localtime_s(&timeinfo, &d.targetTimeStamp);
-  WCHAR szTime[256] { 0 };
-  ::wcsftime(szTime, sizeof(szTime), DateFormat, &timeinfo);
+  FMTLOG_CHAR szTime[256] { 0 };
+  _tcsftime(szTime, sizeof(szTime), DateFormat, &timeinfo);
   if (pos1 > pos2)
     logFile.insert(pos1, szTime);
   else
@@ -658,9 +680,9 @@ void fmtlogT<_>::poll(bool forceFlush) {
 }
 
 template<int _>
-void fmtlogT<_>::setThreadName(const wchar_t* name) noexcept {
+void fmtlogT<_>::setThreadName(const FMTLOG_CHAR* name) noexcept {
   preallocate();
-  threadBuffer->nameSize = fmt::format_to_n(threadBuffer->name, sizeof(fmtlog::threadBuffer->name), L"{}", name).size;
+  threadBuffer->nameSize = fmt::format_to_n(threadBuffer->name, sizeof(fmtlog::threadBuffer->name), _T("{}"), name).size;
 }
 
 template<int _>
@@ -678,7 +700,7 @@ void fmtlogT<_>::setLogQFullCB(LogQFullCBFn cb, void* userData) noexcept {
 }
 
 template<int _>
-void fmtlogT<_>::setHeaderPattern(const wchar_t* pattern) {
+void fmtlogT<_>::setHeaderPattern(const FMTLOG_CHAR* pattern) {
   fmtlogDetailWrapper<>::impl.setHeaderPattern(pattern);
 }
 

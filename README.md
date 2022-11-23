@@ -17,13 +17,13 @@ fmtlog is a performant asynchronous logging library using [fmt](https://github.c
 
 ## 本分支改动
 
-为了封装给 [火山软件开发平台](http://voldp.com/voldev.html) 使用，修改了内部的编码
+本分支的改动都是为了封装给 [火山软件开发平台](http://voldp.com/voldev.html) 使用
 
-- 内部编码从 char 改为 wchar_t
+- 增加宏 FMTLOG_UNICODE_STRING，用于启用 wchar_t 支持，Windows下默认开启
 - LogCBFn 回调增加一个 userData 指针参数（使用 setLogQFullCB 设置）
 - 增加 logOnceText，用于记录纯文本的日志（不做格式化）
 - 增加 FMTLOG_LIMIT_LOC 和 FMTLOG_ONCE_LOC，调用时在参数中提供语句位置
-- 增加 LOG_LIMIT_LOC 和 LOG_ONCE_LOC，记录纯文本日志且在参数中提供语句位置
+- 增加 FMTLOG_LIMIT_PLAIN 和 FMTLOG_ONCE_PLAIN，记录纯文本日志且在参数中提供语句位置
 - 增加一个 HeaderPattern——L，提供中文的日志级别描述
 - 增加一个头文件定义文件 piv_fmtlog.h
 
