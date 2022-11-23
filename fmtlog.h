@@ -614,7 +614,7 @@ public:
                               int& argIdx, std::vector<fmt::basic_format_arg<Context>>& args) {
     constexpr size_t num_args = sizeof...(Args);
     constexpr size_t num_dtors = fmt::detail::count<needCallDtor<Args>()...>();
-    const wchar_t* dtor_args[std::max(num_dtors, (size_t)1)];
+    const wchar_t* dtor_args[(std::max)(num_dtors, (size_t)1)];
     const wchar_t* ret;
     if (argIdx < 0) {
       argIdx = (int)args.size();
@@ -640,7 +640,7 @@ public:
     const wchar_t* begin = in.data();
     const wchar_t* p = begin;
     std::unique_ptr<wchar_t[]> unnamed_str(new wchar_t[in.size() + 1 + num_named_args * 5]);
-    fmt::detail::named_arg_info<wchar_t> named_args[std::max(num_named_args, (size_t)1)];
+    fmt::detail::named_arg_info<wchar_t> named_args[(std::max)(num_named_args, (size_t)1)];
     storeNamedArgs<0, 0>(named_args, args...);
 
     wchar_t* out = (wchar_t*)unnamed_str.get();
@@ -700,7 +700,7 @@ public:
       registerLogInfo(logId, formatTo<Args...>, location, level, unnamed_format);
     }
     constexpr size_t num_cstring = fmt::detail::count<isCstring<Args>()...>();
-    size_t cstringSizes[std::max(num_cstring, (size_t)1)];
+    size_t cstringSizes[(std::max)(num_cstring, (size_t)1)];
     uint32_t alloc_size = 8 + (uint32_t)getArgSizes<0>(cstringSizes, args...) * 2;
     bool q_full_cb = true;
     do {

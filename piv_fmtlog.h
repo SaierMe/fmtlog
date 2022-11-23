@@ -18,13 +18,6 @@
 #ifdef _CT
 #undef _CT
 #endif
-// 取消Windows的max和min宏
-#ifdef max
-#undef max
-#endif
-#ifdef min
-#undef min
-#endif
 
 #ifndef FMTLOG_HEADER_ONLY
 #define FMTLOG_HEADER_ONLY
@@ -41,13 +34,6 @@
 // 重新定义_CT宏
 #ifndef _CT
 #define _CT(x)  CVolConstString (_T (x))
-#endif
-// 重新定义Windows的max和min宏
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
 #endif // _PIV_FMTLOG_H

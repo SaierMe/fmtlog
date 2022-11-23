@@ -421,7 +421,7 @@ public:
   void adjustHeap(size_t i) {
     while (true) {
       size_t min_i = i;
-      for (size_t ch = i * 2 + 1, end = std::min(ch + 2, bgThreadBuffers.size()); ch < end; ch++) {
+      for (size_t ch = i * 2 + 1, end = (std::min)(ch + 2, bgThreadBuffers.size()); ch < end; ch++) {
         auto h_ch = bgThreadBuffers[ch].header;
         auto h_min = bgThreadBuffers[min_i].header;
         if (h_ch && (!h_min || *(int64_t*)(h_ch + 1) < *(int64_t*)(h_min + 1))) min_i = ch;
