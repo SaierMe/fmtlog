@@ -126,7 +126,7 @@ public:
     for (int i = 0; i < parttenArgSize; i++) {
       reorderIdx[i] = parttenArgSize - 1;
     }
-#ifdef FMTLOG_UNICODE_STRING
+#if FMTLOG_UNICODE_STRING
     headerPattern = fmtlog::unNameFormat<true>(
       pattern, reorderIdx, L"a"_a = L"", L"b"_a = L"", L"C"_a = L"", L"Y"_a = L"", L"m"_a = L"", L"d"_a = L"",
       L"t"_a = L"thread name", L"F"_a = L"", L"f"_a = L"", L"e"_a = L"", L"S"_a = L"", L"M"_a = L"", L"H"_a = L"",
@@ -168,7 +168,7 @@ public:
     setArg<22>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 23));   // YmdHMSe
     setArg<23>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 26));   // YmdHMSf
     setArg<24>(fmt::basic_string_view<FMTLOG_CHAR>(year.s, 29));   // YmdHMSF
-#ifdef FMTLOG_UNICODE_STRING
+#if FMTLOG_UNICODE_STRING
     setArg<25>(fmt::basic_string_view<FMTLOG_CHAR>(logLevelCN.s, 2));
 #else
     setArg<25>(fmt::basic_string_view<FMTLOG_CHAR>(logLevelCN.s, 6));
@@ -288,7 +288,7 @@ public:
   FMTLOG_CHAR dot1 = _T('.');
   Str<9> nanosecond;
   Str<3> logLevel;
-#ifdef FMTLOG_UNICODE_STRING
+#if FMTLOG_UNICODE_STRING
   Str<2> logLevelCN;
 #else
   Str<6> logLevelCN;
@@ -587,7 +587,7 @@ bool fmtlogT<_>::setLogFile(const FMTLOG_CHAR* filename, bool truncate) {
   fseek(newFp, 0, SEEK_END);
   d.fpos = ftell(newFp);
   if (d.fpos == 0) {
-#ifdef FMTLOG_UNICODE_STRING
+#if FMTLOG_UNICODE_STRING
     const unsigned char utfBom[2]{0xFF, 0xFE};
 #else
     const unsigned char utfBom[3]{0xEF, 0xBB, 0xBF};

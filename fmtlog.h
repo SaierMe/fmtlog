@@ -24,10 +24,13 @@ SOFTWARE.
 #pragma once
 //#define FMTLOG_HEADER_ONLY
 #include "fmt/format.h"
-#if (defined (_WIN32) && !defined (FMTLOG_UNICODE_STRING))
-#define FMTLOG_UNICODE_STRING
+#if (defined(_WIN32) && !defined(FMTLOG_UNICODE_STRING))
+#define FMTLOG_UNICODE_STRING 1
 #endif
-#ifdef FMTLOG_UNICODE_STRING
+#ifndef FMTLOG_UNICODE_STRING
+#define FMTLOG_UNICODE_STRING 0
+#endif
+#if FMTLOG_UNICODE_STRING
 #include "fmt/xchar.h"
 #define FMTLOG_CHAR wchar_t
 #define FMTLOG_DWORD uint32_t

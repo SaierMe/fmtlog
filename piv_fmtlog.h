@@ -3,7 +3,7 @@
  * 作者: Xelloss                             *
  * 网站: https://piv.ink                     *
  * 邮箱: xelloss@vip.qq.com                  *
- * 版本: 2022/11/23                          *
+ * 版本: 2022/11/24                          *
 \*********************************************/
 
 #ifndef _PIV_FMTLOG_H
@@ -33,7 +33,7 @@
 #define FMTLOG_ACTIVE_LEVEL FMTLOG_LEVEL_OFF
 #endif
 #ifndef FMTLOG_UNICODE_STRING
-#define FMTLOG_UNICODE_STRING
+#define FMTLOG_UNICODE_STRING 1
 #endif
 #ifndef __FMTLOG_SOURCE
 #define __FMTLOG_SOURCE(F, L) _T(##F##":"##L)
