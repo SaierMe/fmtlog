@@ -257,11 +257,10 @@ public:
   std::vector<StaticLogInfo> logInfos;
   std::vector<StaticLogInfo> bgLogInfos;
 
-  std::basic_string<FMTLOG_CHAR> logFileNmae;
+  std::basic_string<FMTLOG_CHAR> dailyFileName;
   std::basic_string<FMTLOG_CHAR> dataFormat;
-  HANDLE hTimer = nullptr;
-  time_t targetTimeStamp = 0;
-  int32_t timeDiff = 0;
+  time_t nextDailyTime = 0;
+  int32_t nextDayDiffSecond = 0;
 
   fmtlog::LogCBFn logCB = nullptr;
   fmtlog::LogLevel minCBLogLevel;
@@ -504,7 +503,24 @@ public:
       return;
     }
     int64_t now = fmtlogWrapper<>::impl.tscns.tsc2ns(tsc);
-    if (now > nextFlushTime) {
+    if (nextDailyTime != 0 && now > nextDailyTime) {
+      size_t pos1 = dailyFileName.find_last_of('.');
+      size_t pos2 = dailyFileName.find_last_of('\\');
+      std::basic_string<FMTLOG_CHAR> logFile = dailyFileName;
+      struct tm timeinfo;
+      time_t rawtime = now / 1000000000;
+      ::localtime_s(&timeinfo, &rawtime);
+      FMTLOG_CHAR szTime[256] { 0 };
+      _tcsftime(szTime, sizeof(szTime), dataFormat.c_str(), &timeinfo);
+      if (pos1 > pos2)
+        logFile.insert(pos1, szTime);
+      else
+        logFile.append(szTime);
+      timeinfo.tm_sec = 0; timeinfo.tm_min = 0; timeinfo.tm_hour = 0;
+      nextDailyTime = (mktime(&timeinfo) + nextDayDiffSecond) * 1000000000;
+      fmtlog::setLogFile(logFile.c_str(), false);
+    }
+    else if (now > nextFlushTime) {
       flushLogFile();
     }
     else if (nextFlushTime == (std::numeric_limits<int64_t>::max)()) {
@@ -618,20 +634,17 @@ void fmtlogT<_>::setLogFile(FILE* fp, bool manageFp) {
 template<int _>
 bool fmtlogT<_>::setDailyLogFile(const FMTLOG_CHAR* filename, bool truncate, int32_t hour, int32_t second, const FMTLOG_CHAR* DateFormat) noexcept {
   auto& d = fmtlogDetailWrapper<>::impl;
-  d.logFileNmae = filename;
-  auto pos1 = d.logFileNmae.find_last_of(_T('.'));
-  auto pos2 = d.logFileNmae.find_last_of(_T('\\'));
+  d.dailyFileName = filename;
+  size_t pos1 = d.dailyFileName.find_last_of('.');
+  size_t pos2 = d.dailyFileName.find_last_of('\\');
   if (pos1 == std::basic_string<FMTLOG_CHAR>::npos || pos2 == std::basic_string<FMTLOG_CHAR>::npos) {
     return false;
   }
-  std::basic_string<FMTLOG_CHAR> logFile = d.logFileNmae;
-  d.timeDiff = (((24 + hour) * 60) + second) * 60;
-  if (!::CreateTimerQueueTimer(&d.hTimer, 0, reinterpret_cast<WAITORTIMERCALLBACK>(&switchLogFileCallBack), reinterpret_cast<PVOID>(d.timeDiff), 0, 60 * 1000, WT_EXECUTEINTIMERTHREAD)) {
-    return false;
-  }
-  d.targetTimeStamp = std::time(nullptr);
+  std::basic_string<FMTLOG_CHAR> logFile = d.dailyFileName;
+  d.nextDayDiffSecond = (((24 + hour) * 60) + second) * 60;
+  time_t rawtime = fmtlogWrapper<>::impl.tscns.rdns() / 1000000000;
   struct tm timeinfo;
-  ::localtime_s(&timeinfo, &d.targetTimeStamp);
+  ::localtime_s(&timeinfo, &rawtime);
   FMTLOG_CHAR szTime[256] { 0 };
   _tcsftime(szTime, sizeof(szTime), DateFormat, &timeinfo);
   if (pos1 > pos2)
@@ -640,18 +653,16 @@ bool fmtlogT<_>::setDailyLogFile(const FMTLOG_CHAR* filename, bool truncate, int
     logFile.append(szTime);
   d.dataFormat = DateFormat;
   timeinfo.tm_sec = 0; timeinfo.tm_min = 0; timeinfo.tm_hour = 0;
-  d.targetTimeStamp = mktime(&timeinfo) + d.timeDiff;
+  d.nextDailyTime = (mktime(&timeinfo) + d.nextDayDiffSecond) * 1000000000;
   return setLogFile(logFile.c_str(), truncate);
 }
 
 template<int _>
 void fmtlogT<_>::closeDailyLogFile() noexcept {
   auto& d = fmtlogDetailWrapper<>::impl;
-  if (d.hTimer) {
-    ::DeleteTimerQueueTimer(0, d.hTimer, NULL);
-    d.hTimer = nullptr;
-  }
-  fmtlogDetailWrapper<>::impl.closeLogFile();
+  d.nextDailyTime = 0;
+  d.nextDayDiffSecond = 0;
+  d.closeLogFile();
 }
 
 template<int _>

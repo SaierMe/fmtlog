@@ -152,27 +152,6 @@ public:
 
   static void closeDailyLogFile() noexcept;
 
-  static void __stdcall switchLogFileCallBack (PVOID lpParameter, BOOL TimerOrWaitFired) {
-    auto& d = fmtlogDetailWrapper<>::impl;
-    time_t CurrentTime = std::time (nullptr);
-    if (CurrentTime > d.targetTimeStamp) {
-      auto pos1 = d.logFileNmae.find_last_of(_T('.'));
-      auto pos2 = d.logFileNmae.find_last_of(_T('\\'));
-      std::basic_string<FMTLOG_CHAR> logFile = d.logFileNmae;
-      struct tm timeinfo;
-      ::localtime_s(&timeinfo, &CurrentTime);
-      FMTLOG_CHAR szTime[256] { 0 };
-      _tcsftime(szTime, sizeof(szTime), d.dataFormat.c_str(), &timeinfo);
-      if (pos1 > pos2)
-        logFile.insert(pos1, szTime);
-      else
-        logFile.append(szTime);
-      timeinfo.tm_sec = 0; timeinfo.tm_min = 0; timeinfo.tm_hour = 0;
-      d.targetTimeStamp = mktime(&timeinfo) + d.timeDiff;
-      setLogFile(logFile.c_str(), false);
-    }
-  }
-
   // Collect log msgs from all threads and write to log file
   // If forceFlush = true, internal file buffer is flushed
   // User need to call poll() repeatedly if startPollingThread is not used
@@ -226,9 +205,9 @@ public:
   // return true if passed log level is not lower than current log level
   static inline bool checkLogLevel(LogLevel logLevel) noexcept;
 
-  // Run a polling thread in the background with a polling interval
+  // Run a polling thread in the background with a polling interval in ns
   // Note that user must not call poll() himself when the thread is running
-  static void startPollingThread(int64_t pollInterval = 1000000) noexcept;
+  static void startPollingThread(int64_t pollInterval = 1000000000) noexcept;
 
   // Stop the polling thread
   static void stopPollingThread() noexcept;
