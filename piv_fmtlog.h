@@ -1,9 +1,9 @@
 ﻿/*********************************************\
- * 火山视窗 - 格式日志类                     *
+ * 火山视窗PIV模块 - 格式日志类              *
  * 作者: Xelloss                             *
  * 网站: https://piv.ink                     *
  * 邮箱: xelloss@vip.qq.com                  *
- * 版本: 2022/12/03                          *
+ * 版本: 2023/02/03                          *
 \*********************************************/
 
 #ifndef _PIV_FMTLOG_H
@@ -29,9 +29,6 @@
 #endif
 #ifndef FMTLOG_UNICODE_STRING
 #define FMTLOG_UNICODE_STRING 1
-#endif
-#ifndef __FMTLOG_SOURCE
-#define __FMTLOG_SOURCE(F, L) _T(##F##":"##L)
 #endif
 
 #include "fmtlog.h"
